@@ -464,12 +464,11 @@ namespace SexToyLink
 
         private void button_disconnect_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Disconnecting!");
             client.DisconnectAsync();
             SetStatus("Disconnected");
         }
 
-        private void button_Connect_Click(object sender, EventArgs e)
+        private async void button_Connect_Click(object sender, EventArgs e)
         {
             SetStatus("Connecting...");
             try
@@ -482,7 +481,7 @@ namespace SexToyLink
                 return;
             }
 
-            bool isConnected = Connect_InitFace();
+            bool isConnected = await Connect_InitFace();
             if (isConnected == true)
             {
                 //quick and dirty set all connected devices to generic list. need to implement name based separation per user preference later
@@ -495,27 +494,24 @@ namespace SexToyLink
             }            
         }
 
-        bool Connect_InitFace()
+        async Task<bool> Connect_InitFace()
         {
             if (!client.Connected)
             {
                 try
                 {
-                    MessageBox.Show("will try to connect");
-
                     // Create the cancellation token after the popup closes
                     var cts = new CancellationTokenSource();
                     cts.CancelAfter(TimeSpan.FromSeconds(5));
 
                     // Connect without async/wait
-                    client.ConnectAsync(myConnector, cts.Token).GetAwaiter().GetResult();
+                    await client.ConnectAsync(myConnector, cts.Token);
 
                     // If successful extend the timeout
                     // See https://github.com/buttplugio/buttplug-csharp/issues/685
                     cts.CancelAfter(TimeSpan.FromDays(5));
 
-                    MessageBox.Show("tried to connect");
-                    return true;
+                    return client.Connected;
                 }
                 catch (ButtplugClientConnectorException ex)
                 {
