@@ -7,9 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-//using Buttplug.Client;
-//using Buttplug.Core;
-using Buttplug.Core.Messages;
 //using CefSharp;
 //using CefSharp.WinForms;
 using SexToyLink.Classes;
@@ -467,7 +464,9 @@ namespace SexToyLink
 
         private void button_disconnect_Click(object sender, EventArgs e)
         {
+            MessageBox.Show("Disconnecting!");
             client.DisconnectAsync();
+            SetStatus("Disconnected");
         }
 
         private void button_Connect_Click(object sender, EventArgs e)
@@ -483,7 +482,7 @@ namespace SexToyLink
                 return;
             }
 
-            bool isConnected = Connect_InitFace().Result;
+            bool isConnected = Connect_InitFace();
             if (isConnected == true)
             {
                 //quick and dirty set all connected devices to generic list. need to implement name based separation per user preference later
@@ -496,18 +495,25 @@ namespace SexToyLink
             }            
         }
 
-        async Task<bool> Connect_InitFace()
+        bool Connect_InitFace()
         {
             if (!client.Connected)
             {
-                var cts = new CancellationTokenSource();
-                cts.CancelAfter(TimeSpan.FromSeconds(5));
-
                 try
                 {
                     MessageBox.Show("will try to connect");
-                    await client.ConnectAsync(myConnector);
-                    //await client.ConnectAsync(myConnector, cts.Token);
+
+                    // Create the cancellation token after the popup closes
+                    var cts = new CancellationTokenSource();
+                    cts.CancelAfter(TimeSpan.FromSeconds(5));
+
+                    // Connect without async/wait
+                    client.ConnectAsync(myConnector, cts.Token).GetAwaiter().GetResult();
+
+                    // If successful extend the timeout
+                    // See https://github.com/buttplugio/buttplug-csharp/issues/685
+                    cts.CancelAfter(TimeSpan.FromDays(5));
+
                     MessageBox.Show("tried to connect");
                     return true;
                 }
